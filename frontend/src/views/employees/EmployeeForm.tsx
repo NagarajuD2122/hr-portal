@@ -150,26 +150,27 @@ export function EmployeeForm({ initialData, onSubmit, onCancel, loading = false,
 					{errors.role && <small className="p-error">{errors.role.message}</small>}
 				</div>
 				<div className="col-12 md:col-6 flex flex-column gap-2">
-					<label htmlFor="isActive" className="flex align-items-center gap-2">
-						<Checkbox
-							id="isActive"
-							checked={isActiveValue}
-							onChange={(e: { checked: boolean | undefined }) => setValue('isActive', e.checked ?? false)}
-						/>
-						Active
-					</label>
-				</div>
-				<div className="col-12 md:col-4 flex flex-column gap-2">
 					<label htmlFor="street">Street *</label>
 					<InputText id="street" {...register('address.street')} className={errors.address?.street ? 'p-invalid' : ''} />
 					{errors.address?.street && <small className="p-error">{errors.address.street.message}</small>}
 				</div>
-				<div className="col-12 md:col-4 flex flex-column gap-2">
+				<div className="col-12 md:col-6 flex flex-column gap-2">
+					<label htmlFor="isActive" className="flex align-items-center gap-2 mt-5">
+						<Checkbox
+							id="isActive"
+							checked={isActiveValue}
+							className='mt-2'
+							onChange={(e: any) => setValue('isActive', e.checked ?? false)}
+						/>
+						Active
+					</label>
+				</div>
+				<div className="col-12 md:col-6 flex flex-column gap-2">
 					<label htmlFor="city">City *</label>
 					<InputText id="city" {...register('address.city')} className={errors.address?.city ? 'p-invalid' : ''} />
 					{errors.address?.city && <small className="p-error">{errors.address.city.message}</small>}
 				</div>
-				<div className="col-12 md:col-4 flex flex-column gap-2">
+				<div className="col-12 md:col-6 flex flex-column gap-2">
 					<label htmlFor="zipcode">Zipcode *</label>
 					<InputText id="zipcode" {...register('address.zipcode')} className={errors.address?.zipcode ? 'p-invalid' : ''} />
 					{errors.address?.zipcode && <small className="p-error">{errors.address.zipcode.message}</small>}

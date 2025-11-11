@@ -29,7 +29,7 @@ type FormData = z.infer<typeof schema>;
 
 export function EmployeeEditPage() {
 	const { id } = useParams();
-	const token = useAppSelector((s) => s.auth.accessToken);
+	const token = localStorage.getItem('auth:accessToken');
 	const me = useAppSelector((s) => s.auth.user);
 	const canEdit = useMemo(() => me?.role === 'Admin' || me?.role === 'Editor', [me?.role]);
 

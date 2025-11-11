@@ -1,35 +1,62 @@
-import { fetchBaseQuery, createApi } from '@reduxjs/toolkit/query/react';
+import { fetchBaseQuery, createApi, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
 import { clearAuth, updateAccessToken } from '../slices/auth.slice';
 
+// Create the base query
 const rawBaseQuery = fetchBaseQuery({
-	baseUrl: '/api',
-	credentials: 'include',
-	prepareHeaders: (headers, { getState }) => {
-		const token = (getState() as RootState).auth.accessToken;
-		if (token) headers.set('authorization', `Bearer ${token}`);
-		return headers;
-	}
+  baseUrl: '/api',
+  credentials: 'include', // for sending HttpOnly refresh cookie
+ prepareHeaders: (headers, { getState }) => {
+  const stateToken = (getState() as RootState).auth.accessToken;
+  const storageToken = localStorage.getItem('auth:accessToken');
+  // Avoid Bearer null issue
+  const token = stateToken || (storageToken && storageToken !== 'null' ? storageToken : undefined);
+
+  if (token) headers.set('authorization', `Bearer ${token}`);
+
+  return headers;
+}
+
 });
 
+// Add re-authentication layer
 const baseQueryWithReauth: typeof rawBaseQuery = async (args, api, extra) => {
-	let result = await rawBaseQuery(args, api, extra);
-	if (result.error && (result.error as any).status === 401) {
-		// try to refresh
-		const refresh = await rawBaseQuery({ url: '/auth/refresh', method: 'POST' }, api, extra);
-		if (refresh.data && (refresh.data as any).accessToken) {
-			api.dispatch(updateAccessToken((refresh.data as any).accessToken as string));
-			result = await rawBaseQuery(args, api, extra);
-		} else {
-			api.dispatch(clearAuth());
-		}
-	}
-	return result;
+  let result = await rawBaseQuery(args, api, extra);
+
+  // if 401 Unauthorized, try refreshing token
+  if ((result.error as FetchBaseQueryError)?.status === 401) {
+    try {
+      const refreshResult = await rawBaseQuery(
+        { url: '/auth/refresh', method: 'POST' },
+        api,
+        extra
+      );
+
+      const data = (refreshResult.data || {}) as { accessToken?: string };
+
+      if (data.accessToken) {
+        // save new access token
+        api.dispatch(updateAccessToken(data.accessToken));
+        localStorage.setItem('auth:accessToken', data.accessToken);
+
+        // retry the original request
+        result = await rawBaseQuery(args, api, extra);
+      } else {
+        api.dispatch(clearAuth());
+        localStorage.removeItem('auth:accessToken');
+      }
+    } catch (err) {
+      api.dispatch(clearAuth());
+      localStorage.removeItem('auth:accessToken');
+    }
+  }
+
+  return result;
 };
 
+// Create the API instance
 export const api = createApi({
-	baseQuery: baseQueryWithReauth,
-	endpoints: () => ({})
+  reducerPath: 'api',
+  baseQuery: baseQueryWithReauth,
+  endpoints: () => ({}),
 });
-
-

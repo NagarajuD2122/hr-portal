@@ -20,8 +20,6 @@ Full-stack HR portal with auth (access + refresh tokens), RBAC, and employee man
 - MongoDB running locally (or Atlas URI)
 
 ### Backend
-1. Copy env and fill secrets
-   - Create `backend/.env` with:
 ```
 PORT=4000
 MONGO_URI=mongodb://127.0.0.1:27017/hr_portal

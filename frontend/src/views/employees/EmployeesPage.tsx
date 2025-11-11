@@ -9,6 +9,8 @@ import { Button } from 'primereact/button';
 import { Sidebar } from 'primereact/sidebar';
 import { toast } from 'react-toastify';
 import { EmployeeForm, EmployeeFormData } from './EmployeeForm';
+import { Dialog } from 'primereact/dialog';
+
 
 
 type Employee = {
@@ -31,7 +33,7 @@ type PageResponse = {
 };
 
 export function EmployeesPage() {
-	const token = useAppSelector((s) => s.auth.accessToken);
+	const token = localStorage.getItem('auth:accessToken');
 	const me = useAppSelector((s) => s.auth.user);
 	const [data, setData] = useState<PageResponse | null>(null);
 	const [page, setPage] = useState(1);
@@ -40,13 +42,16 @@ export function EmployeesPage() {
 	const [role, setRole] = useState<string>('');
 	const [active, setActive] = useState<string>('');
 	const [visible, setIsVisible] = useState<boolean>(false);
+	const [showDialog, setShowDialog] = useState(false);
+	const [deletingEmployeeId, setDeletingEmployeeId] = useState<string | null>(null);
 	const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [employeeData, setEmployeeData] = useState<Partial<EmployeeFormData> | null>(null);
-
+console.log(page,limit,search,role,active,data);
 	useEffect(() => {
 		const controller = new AbortController();
+		debugger
 		const params = new URLSearchParams();
 		params.set('page', String(page));
 		params.set('limit', String(limit));
@@ -80,6 +85,43 @@ export function EmployeesPage() {
 			setLoading(false);
 		}
 	};
+	const deleteEmployee = async (id: string) => {
+      
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/employees/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                toast.error(text || 'Delete failed');
+                return;
+            }
+            toast.success('Deleted');
+			setShowDialog(false);
+			setDeletingEmployeeId(null);
+            // Refresh the list after delete
+            const params = new URLSearchParams();
+            params.set('page', String(page));
+            params.set('limit', String(limit));
+            if (search) params.set('search', search);
+            if (role) params.set('role', role);
+            if (active) params.set('isActive', active);
+            fetch(`/api/employees?${params.toString()}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include'
+            })
+                .then((r) => r.json())
+                .then(setData)
+                .catch(() => {});
+        } catch (e) {
+            toast.error('Delete failed');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
 	const openSidebar = (employeeId: string | null = null) => {
 		setEditingEmployeeId(employeeId);
@@ -139,6 +181,7 @@ export function EmployeesPage() {
 	const canCreate = useMemo(() => me?.role === 'Admin' || me?.role === 'Editor', [me?.role]);
 	const canEdit = canCreate;
 	const canDelete = me?.role === 'Admin';
+	
 
 	return (
 		<div className="w-full flex flex-column gap-4 m-4">
@@ -177,19 +220,17 @@ export function EmployeesPage() {
 				{canCreate && <Button onClick={() => openSidebar(null)}>Add Employee</Button>}
 			</div>
 			<DataTable
-				value={data?.items ?? []}
-				paginator
-				rows={limit}
-				first={(page - 1) * limit}
-				totalRecords={data?.total ?? 0}
-				onPage={(e) => {
-					// e.page is 0-based
-					setPage((e.page ?? 0) + 1);
-					// rows change handled by e.rows if we want to support it
-					// but our limit is fixed for now
-				}}
-				responsiveLayout="scroll"
-				emptyMessage="No employees"
+			value={data?.items ?? []}
+			paginator
+			rows={limit}
+			first={(page - 1) * limit}
+			totalRecords={data?.total ?? 0}
+			loading={!data}
+			lazy
+			onPage={(e:any) => setPage(e?.page + 1)} // ✅ updates state
+			paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+			currentPageReportTemplate="{first} to {last} of {totalRecords}"
+			emptyMessage="No employees"
 			>
 				<Column field="name" header="Name" sortable body={(row: Employee) => (
 						<div className={`${canEdit ? "cursor-pointer":""}`} onClick={() => canEdit&& openSidebar(row._id)} >
@@ -202,12 +243,18 @@ export function EmployeesPage() {
 				<Column
 					header="Actions"
 					body={(row: Employee) => (
-						<div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-							{canDelete && <Link to={`/employees/${row._id}?action=delete`}>Delete</Link>}
-						</div>
+						<Button label="Delete" className="p-button-text p-button-plain mr-2" onClick={() => { setShowDialog(true); setDeletingEmployeeId(row._id); }} disabled={!canDelete} />
+						
 					)}
 				/>
 			</DataTable>
+			<Dialog header="Delete Employee" visible={showDialog} onHide={()=>setShowDialog} modal>
+				<div>Are you sure you want to delete this employee?</div>
+				<div className="flex justify-content-end gap-2 mt-4">
+					<Button label="Cancel" className="p-button-secondary" onClick={()=>setShowDialog(false)} />
+					<Button label="Delete" className="p-button-danger" onClick={()=>deleteEmployee(deletingEmployeeId || '')} />
+				</div>
+			</Dialog>
 			<Sidebar position="right" visible={visible}onHide={()=>''} style={{ width: '50vw' }}>
 				<div className="flex flex-column gap-3">
 					<EmployeeForm
