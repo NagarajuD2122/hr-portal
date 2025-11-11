@@ -1,0 +1,143 @@
+/* Main Navigation Container */
+.sc_nav {
+  width: 150px;
+
+  /* Logo styles */
+  .sc_nav_logo {
+    height: 32px;
+  }
+
+  /* Menu bar adjustments */
+  .menubar {
+    height: calc(100% - 64px);
+
+    /* Menu item styles */
+    .menu_item {
+      position: relative; // Make sure submenu is positioned relative to the item
+
+      /* Link styles with hover effects */
+      .menu_link {
+        transition:
+          transform 0.2s ease,
+          background-color 0.3s ease;
+        padding: 8px;
+        display: block;
+
+        svg {
+          width: 20px;
+          height: 20px;
+
+          path {
+            stroke: var(--primary-300);
+          }
+        }
+
+        /* Scale and background color change on hover */
+        &:hover {
+          transform: scale(1.1);
+          background-color: #8190e8;
+
+          /* SVG color change on hover */
+          svg {
+            path {
+              stroke: #fff;
+            }
+          }
+        }
+
+        &.active {
+          transform: scale(1.1);
+          background-color: #8190e8;
+
+          /* SVG color change on hover */
+          svg {
+            path {
+              stroke: #fff;
+            }
+          }
+        }
+      }
+
+      /* Submenu display on hover */
+      &:hover {
+        .submenu {
+          display: block !important;
+          /* Ensures submenu visibility */
+          transform: translateY(-5px);
+        }
+      }
+    }
+  }
+}
+
+/* Submenu styles */
+.submenu {
+  opacity: 1;
+  transform: translateX(0px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  visibility: hidden;
+  position: absolute; // Make sure the submenu is positioned next to the parent item
+  top: 0; // Align submenu to the top of the parent item
+  left: 58px; // Adjust this value if necessary to control the submenu's horizontal offset
+  background-color: var(--primary-25);
+  z-index: 1000;
+  width: 100px;
+  list-style: none;
+  // border-radius: 6px;
+  border: 1px solid var(--gray-200);
+
+  li {
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--bg-white);
+    }
+  }
+
+  /* Submenu appearance animation on hover */
+  .menu_item:hover & {
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+
+    &:hover {
+      background-color: var(--bg-white);
+    }
+  }
+}
+
+/* Submenu entry animation */
+.submenu-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.submenu-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.profile_menu_link {
+  transition:
+    transform 0.2s ease,
+    background-color 0.3s ease;
+  padding: 10px;
+  display: block;
+
+  /* Scale and background color change on hover */
+  &:hover {
+    transform: scale(1.1);
+
+    /* SVG color change on hover */
+    svg {
+      path {
+        stroke: #fff;
+      }
+    }
+  }
+}
